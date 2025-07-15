@@ -57,7 +57,7 @@ export class ParrotAgent extends BotAgent {
     try {
       // Extract text from the incoming utterance
       const dialogEvent = event.dialogEvent;
-      const textFeature = dialogEvent.features?.text;
+      const textFeature = dialogEvent.features?.get('text');
       
       if (!textFeature || !textFeature.tokens || textFeature.tokens.length === 0) {
         // No text to parrot, send a default response
