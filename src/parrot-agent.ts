@@ -12,10 +12,8 @@ import {
  * Extends BotAgent to provide parrot functionality
  */
 export class ParrotAgent extends BotAgent {
-  public manifest: ManifestOptions;
   constructor(manifest: ManifestOptions) {
     super(manifest);
-    this.manifest = manifest;
   }
 
   /**
@@ -39,7 +37,7 @@ export class ParrotAgent extends BotAgent {
           eventType: 'publishManifests',
           to: { speakerUri: inEnvelope.sender.speakerUri },
           parameters: {
-            servicingManifests: [this.manifest]
+            servicingManifests: [this.manifest.toObject()]
           }
         });
       }
