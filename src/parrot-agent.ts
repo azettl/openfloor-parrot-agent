@@ -32,9 +32,9 @@ export class ParrotAgent extends BotAgent {
         const responseEvent = await this._handleParrotUtterance(event, inEnvelope);
         if (responseEvent) responseEvents.push(responseEvent);
       } else if (addressedToMe && event.eventType === 'getManifests') {
-        // Respond to getManifests with publishManifests event
+        // Respond to getManifests with publishManifest event
         responseEvents.push({
-          eventType: 'publishManifests',
+          eventType: 'publishManifest',
           to: { speakerUri: inEnvelope.sender.speakerUri },
           parameters: {
             servicingManifests: [this.manifest.toObject()]
@@ -63,10 +63,15 @@ export class ParrotAgent extends BotAgent {
     inEnvelope: Envelope
   ): Promise<any> {
     try {
-      // Extract text from the incoming utterance
-      const dialogEvent = event.dialogEvent;
-      const textFeature = dialogEvent.features?.get('text');
-      
+      const dialogEvent = event.parameters?.dialogEvent as { features?: any };
+      if (!dialogEvent || typeof dialogEvent !== 'object' || !dialogEvent.features || typeof dialogEvent.features !== 'object') {
+        return createTextUtterance({
+          speakerUri: this.speakerUri,
+          text: "🦜 *chirp* I didn't receive a valid dialog event!",
+          to: { speakerUri: inEnvelope.sender.speakerUri }
+        });
+      }
+      const textFeature = dialogEvent.features.text;
       if (!textFeature || !textFeature.tokens || textFeature.tokens.length === 0) {
         // No text to parrot, send a default response
         return createTextUtterance({
