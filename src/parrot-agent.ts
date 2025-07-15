@@ -12,26 +12,18 @@ import {
  * Extends BotAgent to provide parrot functionality
  */
 export class ParrotAgent extends BotAgent {
+  public manifest: ManifestOptions;
   constructor(manifest: ManifestOptions) {
     super(manifest);
+    this.manifest = manifest;
   }
 
   /**
    * Override the processEnvelope method to handle parrot functionality
    */
   async processEnvelope(inEnvelope: Envelope): Promise<Envelope> {
-    // Create response envelope
-    const outEnvelope = new Envelope({
-      schema: { version: inEnvelope.schema.version },
-      conversation: { id: inEnvelope.conversation.id },
-      sender: {
-        speakerUri: this.speakerUri,
-        serviceUrl: this.serviceUrl
-      },
-      events: []
-    });
+    const responseEvents: any[] = [];
 
-    // Process each event
     for (const event of inEnvelope.events) {
       // Check if this event is addressed to us
       const addressedToMe = !event.to || 
@@ -39,11 +31,30 @@ export class ParrotAgent extends BotAgent {
         event.to.serviceUrl === this.serviceUrl;
 
       if (addressedToMe && isUtteranceEvent(event)) {
-        await this._handleParrotUtterance(event, inEnvelope, outEnvelope);
+        const responseEvent = await this._handleParrotUtterance(event, inEnvelope);
+        if (responseEvent) responseEvents.push(responseEvent);
+      } else if (addressedToMe && event.eventType === 'getManifests') {
+        // Respond to getManifests with publishManifests event
+        responseEvents.push({
+          eventType: 'publishManifests',
+          to: { speakerUri: inEnvelope.sender.speakerUri },
+          parameters: {
+            servicingManifests: [this.manifest]
+          }
+        });
       }
     }
 
-    return outEnvelope;
+    // Create response envelope with all response events
+    return new Envelope({
+      schema: { version: inEnvelope.schema.version },
+      conversation: { id: inEnvelope.conversation.id },
+      sender: {
+        speakerUri: this.speakerUri,
+        serviceUrl: this.serviceUrl
+      },
+      events: responseEvents
+    });
   }
 
   /**
@@ -51,9 +62,8 @@ export class ParrotAgent extends BotAgent {
    */
   private async _handleParrotUtterance(
     event: UtteranceEvent, 
-    inEnvelope: Envelope, 
-    outEnvelope: Envelope
-  ): Promise<void> {
+    inEnvelope: Envelope
+  ): Promise<any> {
     try {
       // Extract text from the incoming utterance
       const dialogEvent = event.dialogEvent;
@@ -61,14 +71,11 @@ export class ParrotAgent extends BotAgent {
       
       if (!textFeature || !textFeature.tokens || textFeature.tokens.length === 0) {
         // No text to parrot, send a default response
-        const responseEvent = createTextUtterance({
+        return createTextUtterance({
           speakerUri: this.speakerUri,
           text: "🦜 *chirp* I can only repeat text messages!",
           to: { speakerUri: inEnvelope.sender.speakerUri }
         });
-        
-        (outEnvelope as any)._events = [...outEnvelope.events, responseEvent];
-        return;
       }
 
       // Combine all token values to get the full text
@@ -79,27 +86,20 @@ export class ParrotAgent extends BotAgent {
       // Create parrot response with emoji prefix
       const parrotText = `🦜 ${originalText}`;
       
-      const responseEvent = createTextUtterance({
+      return createTextUtterance({
         speakerUri: this.speakerUri,
         text: parrotText,
         to: { speakerUri: inEnvelope.sender.speakerUri },
         confidence: 1.0 // Parrot is very confident in repeating!
       });
-
-      // Add to output envelope
-      (outEnvelope as any)._events = [...outEnvelope.events, responseEvent];
-      
     } catch (error) {
       console.error('Error in parrot utterance handling:', error);
-      
       // Send error response
-      const errorResponse = createTextUtterance({
+      return createTextUtterance({
         speakerUri: this.speakerUri,
         text: "🦜 *confused chirp* Something went wrong while trying to repeat that!",
         to: { speakerUri: inEnvelope.sender.speakerUri }
       });
-      
-      (outEnvelope as any)._events = [...outEnvelope.events, errorResponse];
     }
   }
 }

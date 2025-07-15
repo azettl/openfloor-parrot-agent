@@ -25,17 +25,6 @@ app.get('/health', (req: Request, res: Response) => {
   });
 });
 
-// Get agent manifest
-app.get('/manifest', (req: Request, res: Response) => {
-  try {
-    const manifest = (parrotAgent as any).manifest.toObject();
-    res.json(manifest);
-  } catch (error) {
-    console.error('Error getting manifest:', error);
-    res.status(500).json({ error: 'Failed to get manifest' });
-  }
-});
-
 // Main OpenFloor Protocol endpoint
 app.post('/', async (req: Request, res: Response) => {
   try {
