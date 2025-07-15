@@ -10,7 +10,7 @@ app.use(express.json());
 // Create the parrot agent instance
 const parrotAgent = createParrotAgent({
   speakerUri: 'tag:openfloor-demo.com,2025:parrot-agent',
-  serviceUrl: process.env.SERVICE_URL || 'https://your-app-runner-url.amazonaws.com',
+  serviceUrl: process.env.SERVICE_URL || 'https://kmhhywpw32.us-east-1.awsapprunner.com/',
   name: 'Polly the Parrot',
   organization: 'OpenFloor Demo Corp',
   description: 'A friendly parrot that repeats everything you say!'
