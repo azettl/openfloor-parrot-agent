@@ -7,6 +7,20 @@ import {
 const app = express();
 app.use(express.json());
 
+// CORS middleware for openfloor.azettl.net
+const allowedOrigin = 'https://openfloor.azettl.net';
+app.use((req, res, next) => {
+  if (req.headers.origin === allowedOrigin) {
+    res.header('Access-Control-Allow-Origin', allowedOrigin);
+    res.header('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type');
+  }
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
 // Create the parrot agent instance
 const parrotAgent = createParrotAgent({
   speakerUri: 'tag:openfloor-demo.com,2025:parrot-agent',
